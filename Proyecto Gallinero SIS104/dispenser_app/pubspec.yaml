@@ -1,0 +1,42 @@
+name: dispenser_app
+description: A Flutter app skeleton generated from a wireframe (dark theme, basic UI).
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ">=2.18.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.2
+  fl_chart: ^0.66.0
+  path_provider: ^2.1.1
+  http: ^0.13.1
+  web_socket_channel: ^2.4.0
+  flutter_mjpeg: ^2.0.4
+  sleek_circular_slider: ^2.0.1
+  intl: ^0.19.0 # Opcional, para formatear la hora (HH:mm)
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/camera1.png
+    - assets/images/camera2.png
+    - assets/images/camera3.png
+    - assets/images/camera4.png
+    - assets/images/plate.png
+    - assets/images/water.png
+    - assets/images/fondop.jpg
+    - assets/data/comida.json
+    - assets/data/agua.json
+    - assets/data/ambiente.json
+    - assets/images/fonn.png
+    - assets/images/foff.png
+    - assets/images/grano.png
+    - assets/images/granos.png
