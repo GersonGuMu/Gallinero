@@ -1,0 +1,1 @@
+arduino que conecta con los servividores de php, python y con el mismo hardware

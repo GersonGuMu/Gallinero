@@ -1,0 +1,1 @@
+base de datos => Se conecta con los servidores de python y php par almacenar la informacion captada en los componentes de hardware

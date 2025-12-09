@@ -1,0 +1,4 @@
+modemode => modelo conectado con best que resulta ser los mejores datos entrenado para reconocer 
+animales como gallina, pollito, gallo , buho, etc
+
+arduinoapi => conecta la informacion con arduino para asi tener la informacion de cada componente q se muestra en la web de flutter 

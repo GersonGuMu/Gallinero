@@ -1,0 +1,1 @@
+dispenser_app => Consiste en la app web basado en flutter mostrando la informacion del modelo, las luces, agua, temperatura, notificaciones, comida, y detecciones
