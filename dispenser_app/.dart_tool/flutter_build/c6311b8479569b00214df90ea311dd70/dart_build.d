@@ -1,0 +1,1 @@
+ C:\\Users\\David-Code\\Desktop\\Gallinero\\dispenser_app\\.dart_tool\\flutter_build\\c6311b8479569b00214df90ea311dd70\\dart_build_result.json: 

@@ -8,14 +8,31 @@ class StatsScreen extends StatefulWidget {
   _StatsScreenState createState() => _StatsScreenState();
 }
 
-class _StatsScreenState extends State<StatsScreen> {
+class _StatsScreenState extends State<StatsScreen>
+    with SingleTickerProviderStateMixin {
   Map<String, dynamic>? data;
   String? endpoint;
   bool isLoading = true;
   String errorMessage = '';
-  String? tipo; // 'agua' o 'comida'
+  String? tipo;
+
+  late AnimationController _animCtrl;
+  late Animation<double> _anim;
 
   final String serverUrl = 'http://localhost/thermal_api';
+
+  @override
+  void initState() {
+    super.initState();
+    _animCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
+    _anim = CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut);
+  }
+
+  @override
+  void dispose() {
+    _animCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   void didChangeDependencies() {
@@ -23,94 +40,64 @@ class _StatsScreenState extends State<StatsScreen> {
     final args = ModalRoute.of(context)!.settings.arguments;
     if (args != null && endpoint == null) {
       endpoint = args as String;
-      // Detectar si es agua o comida basado en el endpoint
       _detectarTipo();
       _cargarDatosServidor();
     }
   }
 
   void _detectarTipo() {
-    if (endpoint!.startsWith('vaso')) {
-      tipo = 'agua';
-    } else if (endpoint!.startsWith('comida')) {
-      tipo = 'comida';
-    } else {
-      tipo = 'general';
-    }
+    if (endpoint!.startsWith('vaso')) tipo = 'agua';
+    else if (endpoint!.startsWith('comida')) tipo = 'comida';
+    else tipo = 'general';
   }
 
   String _getApiUrl() {
-    if (tipo == 'agua') {
-      return '$serverUrl/agua_api.php?vaso=$endpoint';
-    } else {
-      return '$serverUrl/comida_api.php?plato=$endpoint';
-    }
+    if (tipo == 'agua') return '$serverUrl/agua_api.php?vaso=$endpoint';
+    return '$serverUrl/comida_api.php?plato=$endpoint';
   }
 
   Future<void> _cargarDatosServidor() async {
     try {
-      setState(() {
-        isLoading = true;
-        errorMessage = '';
-      });
-
-      final apiUrl = _getApiUrl();
-      print('🔄 Cargando datos desde: $apiUrl');
-
-      final response = await http.get(
-        Uri.parse(apiUrl),
-        headers: {'Content-Type': 'application/json'},
-      ).timeout(Duration(seconds: 10));
-
+      setState(() { isLoading = true; errorMessage = ''; });
+      final response = await http.get(Uri.parse(_getApiUrl()), headers: {'Content-Type': 'application/json'})
+          .timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
-        final Map<String, dynamic> jsonData = json.decode(response.body);
-
-        print('✅ Datos recibidos: $jsonData');
-
-        setState(() {
-          data = jsonData;
-          isLoading = false;
-        });
-
+        setState(() { data = json.decode(response.body); isLoading = false; });
+        _animCtrl.forward(from: 0);
       } else {
         throw Exception('Error del servidor: ${response.statusCode}');
       }
-
     } catch (e) {
-      print('❌ Error cargando datos: $e');
       setState(() {
         isLoading = false;
         errorMessage = 'Error cargando datos: $e';
-
-        // Datos de ejemplo según el tipo
-        if (tipo == 'agua') {
-          data = {"vacio": 30, "agua": 70};
-        } else {
-          data = {"vacio": 10, "comida": 90};
-        }
+        data = tipo == 'agua' ? {"vacio": 30, "agua": 70} : {"vacio": 10, "comida": 90};
       });
+      _animCtrl.forward(from: 0);
     }
   }
 
-  Color _getAppBarColor() {
+  Color get _primaryColor {
     switch (tipo) {
-      case 'agua':
-        return Colors.blueAccent;
-      case 'comida':
-        return Colors.orangeAccent;
-      default:
-        return Colors.greenAccent;
+      case 'agua': return const Color(0xFF0288D1);
+      case 'comida': return const Color(0xFFFF8F00);
+      default: return const Color(0xFF2E7D32);
     }
   }
 
-  String _getTitulo() {
+  String get _titulo {
     switch (tipo) {
-      case 'agua':
-        return 'Nivel de Agua - ${endpoint?.toUpperCase() ?? "Vaso"}';
-      case 'comida':
-        return 'Estadísticas - ${endpoint?.toUpperCase() ?? "Comida"}';
-      default:
-        return 'Estadísticas - ${endpoint ?? "General"}';
+      case 'agua': return 'Nivel de Agua';
+      case 'comida': return 'Nivel de Comida';
+      default: return 'Estadísticas';
+    }
+  }
+
+  IconData get _icon {
+    switch (tipo) {
+      case 'agua': return Icons.water_drop_rounded;
+      case 'comida': return Icons.grain;
+      default: return Icons.bar_chart_rounded;
     }
   }
 
@@ -118,151 +105,184 @@ class _StatsScreenState extends State<StatsScreen> {
   Widget build(BuildContext context) {
     if (isLoading) {
       return Scaffold(
-        appBar: AppBar(
-          title: Text('Cargando...'),
-          backgroundColor: _getAppBarColor(),
-        ),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('Cargando datos del servidor...'),
-              if (endpoint != null) ...[
-                SizedBox(height: 8),
-                Text('$endpoint', style: TextStyle(color: Colors.grey)),
-                if (tipo != null) Text('Tipo: $tipo', style: TextStyle(color: Colors.grey)),
-              ],
-            ],
-          ),
-        ),
+        backgroundColor: const Color(0xFFFFF8E1),
+        appBar: AppBar(backgroundColor: Colors.white, title: Text(_titulo)),
+        body: const Center(child: CircularProgressIndicator(color: Color(0xFFFF8F00))),
       );
     }
 
-    if (errorMessage.isNotEmpty && data == null) {
-      return Scaffold(
-        appBar: AppBar(
-          title: Text('Error'),
-          backgroundColor: Colors.redAccent,
-        ),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.error, color: Colors.red, size: 50),
-              SizedBox(height: 16),
-              Text('Error cargando datos', style: TextStyle(fontSize: 18)),
-              SizedBox(height: 8),
-              Text(errorMessage, textAlign: TextAlign.center),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _cargarDatosServidor,
-                child: Text('Reintentar'),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    // Calcular datos para el gráfico
     final total = data!.values.fold<double>(0, (sum, val) => sum + (val is num ? val.toDouble() : 0));
     final sections = data!.entries.map((entry) {
       final value = entry.value is num ? entry.value.toDouble() : 0.0;
       final percentage = total > 0 ? (value / total) * 100 : 0;
       return PieChartSectionData(
         value: value,
-        title: total > 0 ? '${entry.key}\n${percentage.toStringAsFixed(1)}%' : '${entry.key}\n0%',
+        title: '${percentage.toStringAsFixed(0)}%',
         color: _getColor(entry.key),
-        radius: 100,
-        titleStyle: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+        radius: 80,
+        titleStyle: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700),
       );
     }).toList();
 
     return Scaffold(
+      backgroundColor: const Color(0xFFFFF8E1),
       appBar: AppBar(
-        title: Text(_getTitulo()),
-        backgroundColor: _getAppBarColor(),
+        backgroundColor: Colors.white,
+        title: Text(_titulo),
       ),
-      body: Padding(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Text(
-              'Datos desde servidor: $serverUrl',
-              style: TextStyle(color: Colors.grey, fontSize: 12),
-            ),
-            SizedBox(height: 10),
-            Expanded(
-              child: PieChart(
-                PieChartData(
-                  sections: sections,
-                  centerSpaceRadius: 40,
-                  sectionsSpace: 3,
+      body: FadeTransition(
+        opacity: _anim,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              if (errorMessage.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.orange.shade200),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.warning_amber_rounded, color: Colors.orange.shade700),
+                      const SizedBox(width: 8),
+                      Expanded(child: Text('Mostrando datos de ejemplo', style: TextStyle(color: Colors.orange.shade700, fontSize: 13))),
+                    ],
+                  ),
                 ),
-              ),
-            ),
-            SizedBox(height: 20),
-            if (data != null) ...[
+
+              // Chart card
               Container(
-                padding: EdgeInsets.all(16),
+                padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(10),
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 16, offset: const Offset(0, 6)),
+                  ],
                 ),
                 child: Column(
                   children: [
-                    Text(
-                      'Resumen:',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    Row(
+                      children: [
+                        Container(
+                          width: 40, height: 40,
+                          decoration: BoxDecoration(color: _primaryColor.withOpacity(0.15), shape: BoxShape.circle),
+                          child: Icon(_icon, color: _primaryColor, size: 22),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(_titulo, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: Color(0xFF4E342E))),
+                      ],
                     ),
-                    SizedBox(height: 10),
-                    ...data!.entries.map((entry) =>
-                        Padding(
-                          padding: EdgeInsets.symmetric(vertical: 4),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text('${entry.key}:', style: TextStyle(fontWeight: FontWeight.bold)),
-                              Text('${entry.value}'),
-                            ],
-                          ),
-                        )
-                    ).toList(),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      height: 220,
+                      child: PieChart(
+                        PieChartData(
+                          sections: sections,
+                          centerSpaceRadius: 50,
+                          sectionsSpace: 4,
+                          pieTouchData: PieTouchData(enabled: false),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    // Legend
+                    Wrap(
+                      spacing: 16,
+                      runSpacing: 8,
+                      children: data!.entries.map((entry) {
+                        final value = entry.value is num ? entry.value.toDouble() : 0.0;
+                        final pct = total > 0 ? (value / total) * 100 : 0;
+                        return _legendItem(entry.key, _getColor(entry.key), '${pct.toStringAsFixed(1)}%');
+                      }).toList(),
+                    ),
                   ],
                 ),
               ),
-            ],
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () => Navigator.popUntil(context, ModalRoute.withName('/')),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _getAppBarColor(),
-                foregroundColor: Colors.white,
+
+              const SizedBox(height: 20),
+
+              // Summary card
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 12, offset: const Offset(0, 4)),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Resumen', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: Color(0xFF4E342E))),
+                    const SizedBox(height: 12),
+                    ...data!.entries.map((entry) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Container(width: 12, height: 12, decoration: BoxDecoration(color: _getColor(entry.key), shape: BoxShape.circle)),
+                              const SizedBox(width: 8),
+                              Text(entry.key, style: const TextStyle(fontWeight: FontWeight.w600)),
+                            ],
+                          ),
+                          Text('${entry.value}', style: TextStyle(color: _getColor(entry.key), fontWeight: FontWeight.w700)),
+                        ],
+                      ),
+                    )).toList(),
+                  ],
+                ),
               ),
-              child: Text('Inicio'),
-            ),
-          ],
+
+              const SizedBox(height: 20),
+
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton.icon(
+                  onPressed: () => Navigator.popUntil(context, ModalRoute.withName('/')),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _primaryColor,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  icon: const Icon(Icons.home_rounded, color: Colors.white),
+                  label: const Text('Ir al Inicio', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white)),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
+  Widget _legendItem(String label, Color color, String value) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(width: 12, height: 12, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+        const SizedBox(width: 6),
+        Text('$label ($value)', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+      ],
+    );
+  }
+
   Color _getColor(String key) {
     switch (key.toLowerCase()) {
-      case 'vacio':
-        return Colors.grey;
-      case 'agua':
-        return Colors.blueAccent;
-      case 'comida':
-        return Colors.orangeAccent;
-      case 'proteina':
-        return Colors.redAccent;
-      case 'carbohidratos':
-        return Colors.greenAccent;
-      default:
-        return Colors.purpleAccent;
+      case 'vacio': return Colors.grey.shade400;
+      case 'agua': return const Color(0xFF0288D1);
+      case 'comida': return const Color(0xFFFF8F00);
+      case 'proteina': return const Color(0xFFD32F2F);
+      case 'carbohidratos': return const Color(0xFF2E7D32);
+      default: return Colors.purpleAccent;
     }
   }
 }
