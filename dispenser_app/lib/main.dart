@@ -1,4 +1,3 @@
-
 import 'package:dispenser_app/screens/lights_screen.dart';
 import 'package:flutter/material.dart';
 import 'screens/home_screen.dart';
@@ -19,14 +18,34 @@ class DispenserApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Dispenser App',
-      theme: ThemeData.dark().copyWith(
-        primaryColor: Colors.tealAccent,
-        scaffoldBackgroundColor: Color(0xFF121212),
-        appBarTheme: AppBarTheme(
-          backgroundColor: Color(0xFF1F1F1F),
+      title: 'GalliSmart',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        useMaterial3: false,
+        primaryColor: const Color(0xFFFF8F00),
+        scaffoldBackgroundColor: const Color(0xFFFFF8E1),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.white,
+          foregroundColor: Color(0xFF4E342E),
+          elevation: 0,
+          centerTitle: true,
+          titleTextStyle: TextStyle(
+            color: Color(0xFF4E342E),
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+          ),
+          iconTheme: IconThemeData(color: Color(0xFF4E342E)),
         ),
-        colorScheme: ColorScheme.dark(),
+        cardColor: Colors.white,
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFFFF8F00),
+            foregroundColor: Colors.white,
+            elevation: 4,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+          ),
+        ),
       ),
       initialRoute: '/',
       routes: {
